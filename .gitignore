@@ -1,0 +1,63 @@
+# ------------------------
+# IDE / Editor
+# ------------------------
+.idea/
+.vscode/
+*.swp
+
+# ------------------------
+# OS junk
+# ------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------
+# Logs
+# ------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------
+# Environment & secrets
+# ------------------------
+*.env
+*.env.*
+!*.env.example
+!frontend/.env.example
+
+# ------------------------
+# Python (backend)
+# ------------------------
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pdb
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ------------------------
+# Vue.js (frontend)
+# ------------------------
+node_modules/
+dist/
+.cache/
+coverage/
+*.tsbuildinfo
+
+# Vue CLI / Vite specific
+*.local
+vite.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# ------------------------
+# Docker
+# ------------------------
+*.pid
