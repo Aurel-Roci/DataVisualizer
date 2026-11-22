@@ -40,9 +40,7 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
 
     try:
         file_content = await read_upload_limited(file, get_max_file_size())
-        logger.info(
-            f"Processing file: {file.filename}, size: {len(file_content)} bytes"
-        )
+        logger.info(f"Processing file: {file.filename}, size: {len(file_content)} bytes")
 
         import camelot
 
@@ -162,9 +160,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
                 filtered_parts.append(part)
 
         if len(filtered_parts) < 2:
-            logger.debug(
-                f"Not enough data in first cell after filtering: {filtered_parts}"
-            )
+            logger.debug(f"Not enough data in first cell after filtering: {filtered_parts}")
             return None
         logger.debug(f"Parsing test result row: {filtered_parts}")
         # The structure is typically:
