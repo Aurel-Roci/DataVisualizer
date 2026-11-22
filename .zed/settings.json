@@ -1,6 +1,7 @@
 {
   "languages": {
     "Python": {
+      "language_servers": ["ty"],
       "format_on_save": "on",
       "prettier": {
         "allowed": true,
