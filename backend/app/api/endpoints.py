@@ -1,9 +1,10 @@
 import logging
 import os
 from datetime import datetime
+from typing import Annotated
 
 # from fastapi.responses import JSONResponse
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 
 from ..context_manager import get_db
 from ..models.bloodwork_metadata import BloodworkMetadata
@@ -60,9 +61,11 @@ async def get_results(
     start_date: datetime,
     end_date: datetime,
     db: InfluxDBService = Depends(get_db),
-    test_names: list[str] | None = None,
+    test_names: Annotated[list[str] | None, Query()] = None,
 ):
-    """Get blood work results for date range"""
+    """Get blood work results for date range (end_date is inclusive of the whole day)"""
+    if start_date > end_date:
+        raise HTTPException(status_code=400, detail="start_date must not be after end_date")
 
     try:
         results = db.get_patient_tests(start_date=start_date, end_date=end_date, test_names=test_names)
@@ -75,5 +78,6 @@ async def get_results(
             "test_names": test_names,
             "results": response,
         }
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    except Exception as e:
+        logger.exception(f"Error fetching results: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch results") from e

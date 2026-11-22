@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
@@ -88,11 +88,11 @@ class InfluxDBService:
                 SELECT *
                 FROM "bloodwork"
                 WHERE time >= $start_date
-                AND time <= $end_date
+                AND time < $end_date
             """
             params = {
                 "start_date": str(start_date.date()),
-                "end_date": str(end_date.date()),
+                "end_date": str(end_date.date() + timedelta(days=1)),  # exclusive upper bound
             }
 
             if test_names:
@@ -109,7 +109,7 @@ class InfluxDBService:
 
         except Exception as e:
             logger.exception(f"Error querying patient tests: {e}")
-            return pd.DataFrame()
+            raise
 
     def get_test_history(self, test_name: str, limit: int = 1000) -> pd.DataFrame:
         """
