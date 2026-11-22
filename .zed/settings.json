@@ -1,0 +1,24 @@
+{
+  "languages": {
+    "Python": {
+      "format_on_save": "on",
+      "prettier": {
+        "allowed": true,
+      },
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true,
+      },
+      "formatter": {
+        "language_server": {
+          "name": "ruff",
+        },
+      },
+    },
+    "TypeScript": {
+      "language_servers": ["eslint", "..."],
+    },
+    "Vue.js": {
+      "language_servers": ["volar", "eslint", "..."],
+    },
+  },
+}

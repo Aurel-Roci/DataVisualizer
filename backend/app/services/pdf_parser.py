@@ -1,19 +1,19 @@
-import pdfplumber
 import io
-import re
-import os
-from fastapi import HTTPException, UploadFile
-from datetime import datetime
-from typing import Dict, List, Optional, Any
 import logging
+import os
+import re
+from datetime import datetime
 
-from ..models.bloodwork_metadata import BloodworkResult, BloodworkRecord
+import pdfplumber
+from fastapi import HTTPException, UploadFile
+
+from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def extract_pdf_data(file: UploadFile, user_bday: str) -> Dict:
+async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
     """Extract structured data from PDF using pdfplumber"""
 
     try:
@@ -24,19 +24,25 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> Dict:
         if len(file_content) > max_size:
             raise HTTPException(
                 status_code=413,
-                detail=f"File too large. Maximum size: {max_size} bytes"
+                detail=f"File too large. Maximum size: {max_size} bytes",
             )
-        logger.info(f"Processing file: {file.filename}, size: {len(file_content)} bytes")
+        logger.info(
+            f"Processing file: {file.filename}, size: {len(file_content)} bytes"
+        )
 
         import camelot
-        tables = camelot.read_pdf(file.file, pages='all',
-                                  line_scale=25,
-                                  joint_tol=10,
-                                  line_tol=8,
-                                  threshold_blocksize=25,
-                                  threshold_constant=-5,
-                                  iterations=3,
-                                  resolution=720)
+
+        tables = camelot.read_pdf(
+            file.file,
+            pages="all",
+            line_scale=25,
+            joint_tol=10,
+            line_tol=8,
+            threshold_blocksize=25,
+            threshold_constant=-5,
+            iterations=3,
+            resolution=720,
+        )
         logger.info(f"CAMELOT table {tables}")
 
         with pdfplumber.open(io.BytesIO(file_content)) as pdf:
@@ -44,9 +50,9 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> Dict:
             page = pdf.pages[0]
         full_text = page.extract_text()
         result = {
-            'full_text': full_text,
-            'tables': tables,
-            'date': extract_test_date(full_text, user_bday),
+            "full_text": full_text,
+            "tables": tables,
+            "date": extract_test_date(full_text, user_bday),
         }
 
         logger.info("Successfully extracted structured data using pdfplumber")
@@ -57,11 +63,11 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> Dict:
         raise Exception("Could not extract text from PDF")
 
 
-def parse_blood_work_table(extracted_data: Dict, name: str) -> BloodworkRecord:
+def parse_blood_work_table(extracted_data: dict, name: str) -> BloodworkRecord:
     """Parse blood work tables and extract test results"""
 
-    date = extracted_data['date']
-    tables = extracted_data['tables']
+    date = extracted_data["date"]
+    tables = extracted_data["tables"]
 
     blood_results = []
 
@@ -90,21 +96,21 @@ def parse_blood_work_table(extracted_data: Dict, name: str) -> BloodworkRecord:
             if test_result:
                 blood_results.append(test_result)
 
-    return BloodworkRecord(patient_name=name,test_date=date, results=blood_results)
+    return BloodworkRecord(patient_name=name, test_date=date, results=blood_results)
 
 
-def find_header_row(table: List[List]) -> Optional[int]:
+def find_header_row(table: list[list]) -> int | None:
     """Find the row that contains the table headers"""
     for i, row in enumerate(table):
         if row and len(row) >= 2:
             # Look for header indicators
-            row_text = ' '.join([cell or '' for cell in row]).upper()
-            if 'REZULTATI' in row_text or 'VLERAT REFERUESE' in row_text:
+            row_text = " ".join([cell or "" for cell in row]).upper()
+            if "REZULTATI" in row_text or "VLERAT REFERUESE" in row_text:
                 return i
     return None
 
 
-def parse_test_row(row: List[str], date: str) -> BloodworkResult | None:
+def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
     """Parse a single test result row"""
     logger.debug(f"Parsing row: {row}")
     try:
@@ -115,14 +121,16 @@ def parse_test_row(row: List[str], date: str) -> BloodworkResult | None:
 
         meaningful_cells = [cell for cell in clean_row if cell.strip()]
         if len(meaningful_cells) <= 1:
-            logger.debug(f"Skipping row with only {len(meaningful_cells)} meaningful cell(s): {clean_row}")
+            logger.debug(
+                f"Skipping row with only {len(meaningful_cells)} meaningful cell(s): {clean_row}"
+            )
             return None
 
         all_parts = []
         for cell in clean_row:
             if cell:
                 # Split by newlines and add to all_parts
-                cell_parts = cell.split('\n')
+                cell_parts = cell.split("\n")
                 for part in cell_parts:
                     part = part.strip()
                     if part:
@@ -138,14 +146,16 @@ def parse_test_row(row: List[str], date: str) -> BloodworkResult | None:
                 filtered_parts.append(part)
 
         if len(filtered_parts) < 2:
-            logger.debug(f"Not enough data in first cell after filtering: {filtered_parts}")
+            logger.debug(
+                f"Not enough data in first cell after filtering: {filtered_parts}"
+            )
             return None
         logger.debug(f"Parsing test result row: {filtered_parts}")
         # The structure is typically:
         # [test_name_with_number, value, reference_range, ...]
         # Find the test name (first non-empty cell)
         test_name = filtered_parts[0]
-        test_name = test_name.replace('*', '').strip()
+        test_name = test_name.replace("*", "").strip()
         value = None
         reference_range = ""
 
@@ -154,13 +164,14 @@ def parse_test_row(row: List[str], date: str) -> BloodworkResult | None:
             if not value:
                 # Look for a number at the start of the part
                 import re
-                number_match = re.match(r'^(\d+\.?\d*)', part)
+
+                number_match = re.match(r"^(\d+\.?\d*)", part)
                 if number_match:
                     try:
                         value = float(number_match.group(1))
                         value_str = number_match.group(1)
                         # Everything after the number could be reference info
-                        remaining = part[len(value_str):].strip()
+                        remaining = part[len(value_str) :].strip()
                         if remaining:
                             reference_range = remaining
                         continue
@@ -204,14 +215,25 @@ def extract_unit_from_range(reference_range: str) -> str:
         return ""
 
     # Common units in blood work
-    units = ['%', 'mg/dL', 'mg/dl', 'U/L', 'g/dL', 'g/dl', 'mmol/L', 'μg/dL', 'ng/mL', 'mL/min']
+    units = [
+        "%",
+        "mg/dL",
+        "mg/dl",
+        "U/L",
+        "g/dL",
+        "g/dl",
+        "mmol/L",
+        "μg/dL",
+        "ng/mL",
+        "mL/min",
+    ]
 
     for unit in units:
         if unit in reference_range:
             return unit
 
     # Look for other patterns
-    unit_match = re.search(r'([a-zA-Z/μ]+)', reference_range)
+    unit_match = re.search(r"([a-zA-Z/μ]+)", reference_range)
     if unit_match:
         return unit_match.group(1)
 
@@ -222,7 +244,7 @@ def extract_test_date(text: str, user_bday: str) -> str:
     """Extract date in DD/MM/YYYY format from text"""
 
     date_match = None
-    date_pattern = r'\b(\d{2}/\d{2}/\d{4})\b'
+    date_pattern = r"\b(\d{2}/\d{2}/\d{4})\b"
     dates = re.findall(date_pattern, text)
 
     for date_str in dates:
@@ -234,17 +256,16 @@ def extract_test_date(text: str, user_bday: str) -> str:
         return datetime.now().strftime("%d/%m/%Y")
 
     if isinstance(date_match, str):
-        date_obj = datetime.strptime(date_match, '%d/%m/%Y')
+        date_obj = datetime.strptime(date_match, "%d/%m/%Y")
     else:
         date_obj = date_match
 
-    return date_obj.strftime('%Y-%m-%d')
-
+    return date_obj.strftime("%Y-%m-%d")
 
 
 def extract_name(text: str) -> str:
     """Extract date from 'DATA E ANALIZËS' field"""
-    date_pattern = r'DATA .*\s*:\s*(\d{2}/\d{2}/\d{4})'
+    date_pattern = r"DATA .*\s*:\s*(\d{2}/\d{2}/\d{4})"
     match = re.search(date_pattern, text)
 
     if match:
