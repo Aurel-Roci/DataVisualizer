@@ -52,7 +52,7 @@ async def upload_bloodwork(
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
-    await handle_bloodwork(db, file, metadata)
+    return await handle_bloodwork(db, file, metadata)
 
 
 @router.get("/results")

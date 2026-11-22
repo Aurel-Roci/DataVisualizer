@@ -17,7 +17,8 @@ async def handle_bloodwork(db: InfluxDBService, file: UploadFile, metadata: Bloo
             raise HTTPException(status_code=400, detail="No table data found in PDF")
         parsed_data = parse_blood_work_table(extracted_data, metadata.name)
 
-        db.store_bloodwork_record(parsed_data)
+        if not db.store_bloodwork_record(parsed_data):
+            raise HTTPException(status_code=503, detail="Failed to store results in database")
 
         return {
             "filename": file.filename,
@@ -27,6 +28,8 @@ async def handle_bloodwork(db: InfluxDBService, file: UploadFile, metadata: Bloo
             "message": "Blood work parsed successfully",
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Error processing file: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing file: {e!s}") from e
