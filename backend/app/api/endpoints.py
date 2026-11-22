@@ -70,7 +70,8 @@ async def get_results(
     try:
         results = db.get_patient_tests(start_date=start_date, end_date=end_date, test_names=test_names)
 
-        response = results.to_dict("records")
+        # pandas 3 fills missing strings with NaN (not None), which is not JSON serializable
+        response = results.astype(object).where(results.notna(), None).to_dict("records")
 
         return {
             "start_date": start_date,
