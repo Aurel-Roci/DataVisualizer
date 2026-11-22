@@ -171,7 +171,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
 
         for part in filtered_parts[1:]:
             # Try to extract a numeric value
-            if not value:
+            if value is None:
                 # Look for a number at the start of the part
                 import re
 
@@ -189,7 +189,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
                         pass
 
             # If we already found a value, collect remaining parts as reference range
-            if value:
+            if value is not None:
                 if reference_range:
                     reference_range += " " + part
                 else:
