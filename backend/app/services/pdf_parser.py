@@ -250,33 +250,33 @@ def extract_unit_from_range(reference_range: str) -> str:
     return ""
 
 
+def _parse_date(date_str: str) -> datetime | None:
+    """Parse a DD/MM/YYYY string, returning None if it is not a real date"""
+    try:
+        return datetime.strptime(date_str, "%d/%m/%Y")
+    except ValueError:
+        return None
+
+
 def extract_test_date(text: str, user_bday: str | None) -> str:
-    """Extract date in DD/MM/YYYY format from text"""
+    """Extract the test date (DD/MM/YYYY in the PDF) and return it as YYYY-MM-DD.
 
-    date_match = None
-    date_pattern = r"\b(\d{2}/\d{2}/\d{4})\b"
-    dates = re.findall(date_pattern, text)
+    Prefers the date on the 'DATA ...' label (e.g. 'DATA E ANALIZËS: 02/09/2025'),
+    then falls back to the first date that is not the patient's birthday, and
+    finally to today's date.
+    """
+    candidates = []
 
-    for date_str in dates:
-        if date_str != user_bday:
-            date_match = date_str
+    labelled = re.search(r"DATA[^\n:]*:\s*(\d{2}/\d{2}/\d{4})", text or "", re.IGNORECASE)
+    if labelled:
+        candidates.append(labelled.group(1))
+    candidates.extend(re.findall(r"\b(\d{2}/\d{2}/\d{4})\b", text or ""))
 
-    if date_match is None:
-        logger.warning("Could not find test date, using current date")
-        return datetime.now().strftime("%d/%m/%Y")
+    for date_str in candidates:
+        if date_str == user_bday:
+            continue
+        if date_obj := _parse_date(date_str):
+            return date_obj.strftime("%Y-%m-%d")
 
-    date_obj = datetime.strptime(date_match, "%d/%m/%Y")
-
-    return date_obj.strftime("%Y-%m-%d")
-
-
-def extract_name(text: str) -> str:
-    """Extract date from 'DATA E ANALIZËS' field"""
-    date_pattern = r"DATA .*\s*:\s*(\d{2}/\d{2}/\d{4})"
-    match = re.search(date_pattern, text)
-
-    if match:
-        return match.group(1)  # Returns just the date part (02/09/2025)
-    else:
-        logger.warning("Could not find test date, using current date")
-        return datetime.now().strftime("%d/%m/%Y")
+    logger.warning("Could not find test date, using current date")
+    return datetime.now().strftime("%Y-%m-%d")
