@@ -35,23 +35,21 @@ async def upload_bloodwork(
     request: Request,
     db: InfluxDBService = Depends(get_db),
     file: UploadFile = File(...),
-    birthday: str = Form(None),
+    birthday: str | None = Form(None),
     name: str | None = Form(None),
 ):
     """Upload and parse a blood work PDF file"""
     max_size = get_max_file_size()
     content_length = request.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > max_size:
-        raise HTTPException(
-            status_code=413, detail=f"File too large. Maximum size: {max_size} bytes"
-        )
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size: {max_size} bytes")
 
     try:
         metadata = BloodworkMetadata(name=name, birthday=birthday)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
-    if not file.filename.lower().endswith(".pdf"):
+    if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     await handle_bloodwork(db, file, metadata)
@@ -67,9 +65,7 @@ async def get_results(
     """Get blood work results for date range"""
 
     try:
-        results = db.get_patient_tests(
-            start_date=start_date, end_date=end_date, test_names=test_names
-        )
+        results = db.get_patient_tests(start_date=start_date, end_date=end_date, test_names=test_names)
 
         response = results.to_dict("records")
 
@@ -80,4 +76,4 @@ async def get_results(
             "results": response,
         }
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

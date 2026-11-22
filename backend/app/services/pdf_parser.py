@@ -35,7 +35,7 @@ async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
     return b"".join(chunks)
 
 
-async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
+async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
     """Extract structured data from PDF using pdfplumber"""
 
     try:
@@ -74,10 +74,10 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
         raise
     except Exception as e:
         logger.warning(f"pdfplumber failed: {e}")
-        raise Exception("Could not extract text from PDF")
+        raise Exception("Could not extract text from PDF") from e
 
 
-def parse_blood_work_table(extracted_data: dict, name: str) -> BloodworkRecord:
+def parse_blood_work_table(extracted_data: dict, name: str | None) -> BloodworkRecord:
     """Parse blood work tables and extract test results"""
 
     date = extracted_data["date"]
@@ -135,9 +135,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
 
         meaningful_cells = [cell for cell in clean_row if cell.strip()]
         if len(meaningful_cells) <= 1:
-            logger.debug(
-                f"Skipping row with only {len(meaningful_cells)} meaningful cell(s): {clean_row}"
-            )
+            logger.debug(f"Skipping row with only {len(meaningful_cells)} meaningful cell(s): {clean_row}")
             return None
 
         all_parts = []
@@ -171,7 +169,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
         value = None
         reference_range = ""
 
-        for i, part in enumerate(filtered_parts[1:], 1):
+        for part in filtered_parts[1:]:
             # Try to extract a numeric value
             if not value:
                 # Look for a number at the start of the part
@@ -252,7 +250,7 @@ def extract_unit_from_range(reference_range: str) -> str:
     return ""
 
 
-def extract_test_date(text: str, user_bday: str) -> str:
+def extract_test_date(text: str, user_bday: str | None) -> str:
     """Extract date in DD/MM/YYYY format from text"""
 
     date_match = None
@@ -267,10 +265,7 @@ def extract_test_date(text: str, user_bday: str) -> str:
         logger.warning("Could not find test date, using current date")
         return datetime.now().strftime("%d/%m/%Y")
 
-    if isinstance(date_match, str):
-        date_obj = datetime.strptime(date_match, "%d/%m/%Y")
-    else:
-        date_obj = date_match
+    date_obj = datetime.strptime(date_match, "%d/%m/%Y")
 
     return date_obj.strftime("%Y-%m-%d")
 

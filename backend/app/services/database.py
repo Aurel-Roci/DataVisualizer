@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class InfluxDBService:
     """Service class for InfluxDB v3 operations"""
 
-    def __init__(self, host: str = None, token: str = None, database: str = "bloodwork"):
+    def __init__(self, host: str | None = None, token: str | None = None, database: str = "bloodwork"):
         """
         Initialize InfluxDB v3 client
 

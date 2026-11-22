@@ -15,7 +15,7 @@ class BloodworkMetadata(BaseModel):
             try:
                 datetime.strptime(v, "%d/%m/%Y")
             except ValueError:
-                raise ValueError("Birthday must be in DD/MM/YYYY format")
+                raise ValueError("Birthday must be in DD/MM/YYYY format") from None
         return v
 
 
@@ -34,6 +34,6 @@ class BloodworkResult:
 class BloodworkRecord:
     """Data class for complete bloodwork record"""
 
-    patient_name: str
+    patient_name: str | None
     test_date: datetime
     results: list[BloodworkResult]

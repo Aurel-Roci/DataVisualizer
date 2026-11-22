@@ -9,9 +9,7 @@ from ..services.pdf_parser import extract_pdf_data, parse_blood_work_table
 logger = logging.getLogger(__name__)
 
 
-async def handle_bloodwork(
-    db: InfluxDBService, file: UploadFile, metadata: BloodworkMetadata
-) -> dict:
+async def handle_bloodwork(db: InfluxDBService, file: UploadFile, metadata: BloodworkMetadata) -> dict:
     try:
         extracted_data = await extract_pdf_data(file, metadata.birthday)
 
@@ -31,4 +29,4 @@ async def handle_bloodwork(
 
     except Exception as e:
         logger.exception(f"Error processing file: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing file: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Error processing file: {e!s}") from e
