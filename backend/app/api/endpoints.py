@@ -28,7 +28,7 @@ async def root():
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "influxdb_configured": bool(os.getenv("INFLUX_URL"))}
+    return {"status": "healthy", "influxdb_configured": bool(os.getenv("INFLUXDB_HOST"))}
 
 
 @router.post("/upload-bloodwork")

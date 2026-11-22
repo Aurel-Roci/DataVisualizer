@@ -13,18 +13,18 @@ logger = logging.getLogger(__name__)
 class InfluxDBService:
     """Service class for InfluxDB v3 operations"""
 
-    def __init__(self, host: str | None = None, token: str | None = None, database: str = "bloodwork"):
+    def __init__(self, host: str | None = None, token: str | None = None, database: str | None = None):
         """
         Initialize InfluxDB v3 client
 
         Args:
             host: InfluxDB host URL
             token: Authentication token
-            database: Database name
+            database: Database name (defaults to INFLUXDB_DATABASE, then "bloodwork")
         """
         self.host = host or os.getenv("INFLUXDB_HOST")
         self.token = token or os.getenv("INFLUXDB_TOKEN")
-        self.database = database
+        self.database = database or os.getenv("INFLUXDB_DATABASE", "bloodwork")
 
         if not self.host or not self.token:
             raise ValueError("InfluxDB host and token must be provided")
