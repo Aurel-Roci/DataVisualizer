@@ -1,22 +1,19 @@
 import logging
-
-from influxdb_client_3 import InfluxDBClient3
-from datetime import datetime
-from typing import List, Optional
 import os
+from datetime import datetime
+
 import pandas as pd
+from influxdb_client_3 import InfluxDBClient3
 
 from ..models.bloodwork_metadata import BloodworkRecord
 
 logger = logging.getLogger(__name__)
 
+
 class InfluxDBService:
     """Service class for InfluxDB v3 operations"""
 
-    def __init__(self,
-                 host: str = None,
-                 token: str = None,
-                 database: str = "bloodwork"):
+    def __init__(self, host: str = None, token: str = None, database: str = "bloodwork"):
         """
         Initialize InfluxDB v3 client
 
@@ -32,11 +29,7 @@ class InfluxDBService:
         if not self.host or not self.token:
             raise ValueError("InfluxDB host and token must be provided")
 
-        self.client = InfluxDBClient3(
-            host=self.host,
-            token=self.token,
-            database=self.database
-        )
+        self.client = InfluxDBClient3(host=self.host, token=self.token, database=self.database)
 
     def store_bloodwork_record(self, record: BloodworkRecord) -> bool:
         """
@@ -59,10 +52,8 @@ class InfluxDBService:
                         "test_name": result.test_name,
                         "unit": result.unit,
                     },
-                    "fields": {
-                        "value": float(result.value)
-                    },
-                    "time": record.test_date
+                    "fields": {"value": float(result.value)},
+                    "time": record.test_date,
                 }
 
                 # Add optional tags
@@ -78,10 +69,9 @@ class InfluxDBService:
             logging.exception(f"Error storing bloodwork record {e}")
             return False
 
-    def get_patient_tests(self,
-                          start_date: datetime,
-                          end_date: datetime,
-                          test_names: Optional[List[str]] = None) -> pd.DataFrame:
+    def get_patient_tests(
+        self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None
+    ) -> pd.DataFrame:
         """
         Query bloodwork data
 
@@ -94,29 +84,34 @@ class InfluxDBService:
             pandas.DataFrame: Query results
         """
         try:
-            query = f'''
+            query = """
                 SELECT *
                 FROM "bloodwork"
-                WHERE time >= '{start_date.date()}'
-                AND time <= '{end_date.date()}'
-            '''
+                WHERE time >= $start_date
+                AND time <= $end_date
+            """
+            params = {
+                "start_date": str(start_date.date()),
+                "end_date": str(end_date.date()),
+            }
 
             if test_names:
-                test_filter = "', '".join(test_names)
-                query += f" AND test_name IN ('{test_filter}')"
+                placeholders = []
+                for i, name in enumerate(test_names):
+                    params[f"test_name_{i}"] = name
+                    placeholders.append(f"$test_name_{i}")
+                query += f" AND test_name IN ({', '.join(placeholders)})"
 
             query += " ORDER BY time DESC"
 
-            result = self.client.query(query)
+            result = self.client.query(query, query_parameters=params)
             return result.to_pandas()
 
         except Exception as e:
             logger.exception(f"Error querying patient tests: {e}")
             return pd.DataFrame()
 
-    def get_test_history(self,
-                         test_name: str,
-                         limit: int = 1000) -> pd.DataFrame:
+    def get_test_history(self, test_name: str, limit: int = 1000) -> pd.DataFrame:
         """
         Get historical values for a specific test
 
@@ -128,15 +123,15 @@ class InfluxDBService:
             pandas.DataFrame: Historical test values
         """
         try:
-            query = f'''
+            query = f"""
                 SELECT *
                 FROM "bloodwork"
-                AND test_name = '{test_name}'
+                WHERE test_name = $test_name
                 ORDER BY time DESC
-                LIMIT {limit}
-            '''
+                LIMIT {int(limit)}
+            """
 
-            result = self.client.query(query)
+            result = self.client.query(query, query_parameters={"test_name": test_name})
             return result.to_pandas()
 
         except Exception as e:
@@ -154,12 +149,12 @@ class InfluxDBService:
             bool: Success status
         """
         try:
-            query = f'''
+            query = """
                 DELETE FROM "bloodwork"
-                WHERE time = '{date}'
-            '''
+                WHERE time = $date
+            """
 
-            self.client.query(query)
+            self.client.query(query, query_parameters={"date": date})
             return True
 
         except Exception as e:
@@ -168,5 +163,5 @@ class InfluxDBService:
 
     def close(self):
         """Close the database connection"""
-        if hasattr(self.client, 'close'):
+        if hasattr(self.client, "close"):
             self.client.close()
