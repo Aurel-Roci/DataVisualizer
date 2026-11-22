@@ -12,20 +12,34 @@ from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+UPLOAD_CHUNK_SIZE = 64 * 1024
+
+
+def get_max_file_size() -> int:
+    """Maximum accepted upload size in bytes (default 10MB)"""
+    return int(os.getenv("MAX_FILE_SIZE", "10485760"))
+
+
+async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
+    """Read an upload in chunks, aborting as soon as it exceeds max_size"""
+    chunks = []
+    total = 0
+    while chunk := await file.read(UPLOAD_CHUNK_SIZE):
+        total += len(chunk)
+        if total > max_size:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size: {max_size} bytes",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
 
 async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
     """Extract structured data from PDF using pdfplumber"""
 
     try:
-        # File size (10MB limit)
-        max_size = int(os.getenv("MAX_FILE_SIZE", "10485760"))
-
-        file_content = await file.read()
-        if len(file_content) > max_size:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size: {max_size} bytes",
-            )
+        file_content = await read_upload_limited(file, get_max_file_size())
         logger.info(
             f"Processing file: {file.filename}, size: {len(file_content)} bytes"
         )
@@ -58,6 +72,8 @@ async def extract_pdf_data(file: UploadFile, user_bday: str) -> dict:
         logger.info("Successfully extracted structured data using pdfplumber")
         return result
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.warning(f"pdfplumber failed: {e}")
         raise Exception("Could not extract text from PDF")

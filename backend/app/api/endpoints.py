@@ -1,6 +1,6 @@
 import os
 import logging
-from fastapi import UploadFile, File, HTTPException, APIRouter, Form, Depends
+from fastapi import UploadFile, File, HTTPException, APIRouter, Form, Depends, Request
 # from fastapi.responses import JSONResponse
 from typing import Optional, List
 from datetime import datetime
@@ -9,6 +9,7 @@ from ..context_manager import get_db
 from ..models.bloodwork_metadata import BloodworkMetadata
 from ..services.bloodwork import handle_bloodwork
 from ..services.database import InfluxDBService
+from ..services.pdf_parser import get_max_file_size
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,11 +38,20 @@ async def health_check():
 
 
 @router.post("/upload-bloodwork")
-async def upload_bloodwork(db: InfluxDBService = Depends(get_db),
+async def upload_bloodwork(request: Request,
+                           db: InfluxDBService = Depends(get_db),
                            file: UploadFile = File(...),
                            birthday: str = Form(None),
                            name: Optional[str] = Form(None)):
     """Upload and parse a blood work PDF file"""
+    max_size = get_max_file_size()
+    content_length = request.headers.get("content-length")
+    if content_length and content_length.isdigit() and int(content_length) > max_size:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size: {max_size} bytes"
+        )
+
     try:
         metadata = BloodworkMetadata(name=name, birthday=birthday)
     except ValueError as e:
