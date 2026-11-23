@@ -1,0 +1,21 @@
+.dashboard {
+  margin-right: var(--right-panel-w);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  padding: 24px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.state {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.state.error {
+  color: var(--danger);
+}

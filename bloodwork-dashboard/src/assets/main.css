@@ -1,3 +1,6 @@
+@import './buttons.css';
+@import './controls.css';
+
 :root {
   --bg: #f4f6f8;
   --surface: #ffffff;

@@ -5,8 +5,10 @@ import ChartCard from '../components/ChartCard.vue'
 import UploadDialog from '../components/UploadDialog.vue'
 import RightSidebar from '../components/RightSidebar.vue'
 import { useBloodworkStore } from '../stores/bloodwork'
+import { useLayoutStore } from '../stores/layout'
 
 const store = useBloodworkStore()
+const layout = useLayoutStore()
 const uploadOpen = ref(false)
 
 // local calendar date as YYYY-MM-DD (toISOString would shift to UTC)
@@ -32,6 +34,22 @@ watch(
 )
 
 const subtitle = computed(() => (store.startDate ? `${from.value} → ${to.value}` : 'loading…'))
+
+// One line of status text above the charts, if there's anything to say.
+const status = computed<{ text: string; isError: boolean } | null>(() => {
+  const hasData = store.markers.length > 0
+
+  if (store.error) return { text: `Error: ${store.error}`, isError: true }
+  if (store.loading) return { text: hasData ? 'Refreshing…' : 'Loading…', isError: false }
+  if (!hasData) return { text: 'No results in this date range.', isError: false }
+  if (layout.panels.length === 0) {
+    return {
+      text: 'No markers selected. Pick some in the sidebar and press Apply Layout.',
+      isError: false,
+    }
+  }
+  return null
+})
 </script>
 
 <template>
@@ -45,14 +63,9 @@ const subtitle = computed(() => (store.startDate ? `${from.value} → ${to.value
     />
 
     <div class="content">
-      <p v-if="store.loading" class="state">Loading…</p>
-      <p v-else-if="store.error" class="state error">Error: {{ store.error }}</p>
-      <p v-else-if="store.markers.length === 0" class="state">No results in this date range.</p>
-      <p v-else-if="store.panels.length === 0" class="state">
-        No markers selected. Pick some in the sidebar and press Apply Layout.
-      </p>
+      <p v-if="status" class="state" :class="{ error: status.isError }">{{ status.text }}</p>
       <ChartCard
-        v-for="panel in store.panels"
+        v-for="panel in layout.panels"
         :key="panel.id"
         :title="panel.title"
         :series="panel.series"
@@ -64,26 +77,4 @@ const subtitle = computed(() => (store.startDate ? `${from.value} → ${to.value
   </div>
 </template>
 
-<style scoped>
-.dashboard {
-  margin-right: var(--right-panel-w);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.content {
-  padding: 24px 28px 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.state {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-.state.error {
-  color: var(--danger);
-}
-</style>
+<style scoped src="./DashboardView.css"></style>

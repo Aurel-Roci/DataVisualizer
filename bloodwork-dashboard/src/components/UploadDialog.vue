@@ -26,11 +26,10 @@ async function submit() {
   submitting.value = true
   error.value = null
   try {
-    await store.uploadBloodwork(
-      file.value,
-      name.value,
-      birthday.value ? toBackendDate(birthday.value) : undefined,
-    )
+    await store.upload(file.value, {
+      name: name.value,
+      birthday: birthday.value ? toBackendDate(birthday.value) : undefined,
+    })
     emit('close')
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Upload failed'
@@ -76,75 +75,4 @@ async function submit() {
   </div>
 </template>
 
-<style scoped>
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 25, 35, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-.dialog {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 22px 24px;
-  width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-h2 {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: normal;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-.field input[type='text'],
-.field input[type='date'] {
-  font: inherit;
-  font-size: 13px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-.error {
-  font-size: 12px;
-  color: var(--danger);
-}
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 7px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-secondary {
-  background: none;
-  border: 1px solid var(--border);
-  padding: 7px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-</style>
+<style scoped src="./UploadDialog.css"></style>
