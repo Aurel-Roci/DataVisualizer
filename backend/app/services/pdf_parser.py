@@ -159,14 +159,11 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
                     if part:
                         all_parts.append(part)
 
-        # Remove leading number if present
-        filtered_parts = []
-        for part in all_parts:
-            part = part.strip()
-            if part:
-                if part.isdigit():
-                    continue
-                filtered_parts.append(part)
+        # Drop the row index (digit-only cells before the test name). Digit-only
+        # cells after the name are integer results (e.g. Platelets 308), so keep them.
+        filtered_parts = list(all_parts)
+        while filtered_parts and filtered_parts[0].isdigit():
+            filtered_parts.pop(0)
 
         if len(filtered_parts) < 2:
             logger.debug(f"Not enough data in first cell after filtering: {filtered_parts}")
