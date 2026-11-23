@@ -3,10 +3,18 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from ..domain.errors import BloodworkError, ExtractionFailed, FileTooLarge, InvalidReport, StorageUnavailable
+from ..domain.errors import (
+    BloodworkError,
+    ExtractionFailed,
+    FileTooLarge,
+    InvalidDateRange,
+    InvalidReport,
+    StorageUnavailable,
+)
 
 _STATUS_BY_ERROR: dict[type[BloodworkError], int] = {
     InvalidReport: 400,
+    InvalidDateRange: 400,
     FileTooLarge: 413,
     StorageUnavailable: 503,
     ExtractionFailed: 500,

@@ -7,7 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from ..adapters.outbound.influx_repository import InfluxBloodworkRepository
 from ..adapters.outbound.pdf_camelot import CamelotReportExtractor
-from ..application.use_cases import UploadBloodwork
+from ..application.use_cases import GetResults, UploadBloodwork
 from ..context_manager import get_db
 from ..core.config import get_settings
 from ..domain.errors import FileTooLarge
@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 UPLOAD_CHUNK_SIZE = 64 * 1024
+
+
+def get_results_use_case(db: InfluxBloodworkRepository = Depends(get_db)) -> GetResults:
+    return GetResults(repository=db)
 
 
 def get_upload_use_case(db: InfluxBloodworkRepository = Depends(get_db)) -> UploadBloodwork:
@@ -88,25 +92,15 @@ async def upload_bloodwork(
 async def get_results(
     start_date: datetime,
     end_date: datetime,
-    db: InfluxBloodworkRepository = Depends(get_db),
+    use_case: GetResults = Depends(get_results_use_case),
     test_names: Annotated[list[str] | None, Query()] = None,
 ):
     """Get blood work results for date range (end_date is inclusive of the whole day)"""
-    if start_date > end_date:
-        raise HTTPException(status_code=400, detail="start_date must not be after end_date")
+    results = await run_in_threadpool(use_case.execute, start_date, end_date, test_names)
 
-    try:
-        results = db.get_patient_tests(start_date=start_date, end_date=end_date, test_names=test_names)
-
-        # pandas 3 fills missing strings with NaN (not None), which is not JSON serializable
-        response = results.astype(object).where(results.notna(), None).to_dict("records")
-
-        return {
-            "start_date": start_date,
-            "end_date": end_date,
-            "test_names": test_names,
-            "results": response,
-        }
-    except Exception as e:
-        logger.exception(f"Error fetching results: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch results") from e
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "test_names": test_names,
+        "results": results,
+    }

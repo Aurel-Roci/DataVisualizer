@@ -1,8 +1,9 @@
 """Use cases: application logic written against ports only (no FastAPI, camelot or Influx)"""
 
 import logging
+from datetime import datetime
 
-from ..domain.errors import InvalidReport
+from ..domain.errors import InvalidDateRange, InvalidReport
 from ..domain.models import BloodworkRecord
 from ..domain.parsing import extract_test_date, parse_tables
 from .ports import BloodworkRepository, ReportExtractor
@@ -28,3 +29,16 @@ class UploadBloodwork:
 
         self._repository.store(record)
         return record
+
+
+class GetResults:
+    """Read stored results for a date range"""
+
+    def __init__(self, repository: BloodworkRepository):
+        self._repository = repository
+
+    def execute(self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None) -> list[dict]:
+        """Blocking (DB query): call from a worker thread in async code"""
+        if start_date > end_date:
+            raise InvalidDateRange("start_date must not be after end_date")
+        return self._repository.query(start_date, end_date, test_names)

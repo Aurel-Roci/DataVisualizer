@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 
-import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
 
 from ...core.config import get_settings
@@ -71,11 +70,9 @@ class InfluxBloodworkRepository:
             logger.exception(f"Error storing bloodwork record: {e}")
             raise StorageUnavailable("Failed to store results in database") from e
 
-    def get_patient_tests(
-        self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None
-    ) -> pd.DataFrame:
+    def query(self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None) -> list[dict]:
         """
-        Query bloodwork data
+        Query bloodwork rows (end_date is inclusive of the whole day), newest first
 
         Args:
             start_date: Start date for query range
@@ -83,7 +80,10 @@ class InfluxBloodworkRepository:
             test_names: List of specific tests to query
 
         Returns:
-            pandas.DataFrame: Query results
+            list[dict]: One JSON-safe dict per stored point (missing values are None)
+
+        Raises:
+            StorageUnavailable: if the query fails
         """
         try:
             query = """
@@ -106,62 +106,13 @@ class InfluxBloodworkRepository:
 
             query += " ORDER BY time DESC"
 
-            result = self.client.query(query, query_parameters=params)
-            return result.to_pandas()
+            df = self.client.query(query, query_parameters=params).to_pandas()
+            # pandas 3 fills missing strings with NaN (not None), which is not JSON serializable
+            return df.astype(object).where(df.notna(), None).to_dict("records")
 
         except Exception as e:
             logger.exception(f"Error querying patient tests: {e}")
-            raise
-
-    def get_test_history(self, test_name: str, limit: int = 1000) -> pd.DataFrame:
-        """
-        Get historical values for a specific test
-
-        Args:
-            test_name: Name of the test value
-            limit: Maximum number of records
-
-        Returns:
-            pandas.DataFrame: Historical test values
-        """
-        try:
-            query = f"""
-                SELECT *
-                FROM "bloodwork"
-                WHERE test_name = $test_name
-                ORDER BY time DESC
-                LIMIT {int(limit)}
-            """
-
-            result = self.client.query(query, query_parameters={"test_name": test_name})
-            return result.to_pandas()
-
-        except Exception as e:
-            logger.exception(f"Error querying test history: {e}")
-            return pd.DataFrame()
-
-    def delete_date_data(self, date: str) -> bool:
-        """
-        Delete all data for a specific date
-
-        Args:
-            date: Date of data to delete
-
-        Returns:
-            bool: Success status
-        """
-        try:
-            query = """
-                DELETE FROM "bloodwork"
-                WHERE time = $date
-            """
-
-            self.client.query(query, query_parameters={"date": date})
-            return True
-
-        except Exception as e:
-            logger.exception(f"Error deleting patient data: {e}")
-            return False
+            raise StorageUnavailable("Failed to fetch results") from e
 
     def close(self):
         """Close the database connection"""

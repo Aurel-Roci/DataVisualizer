@@ -23,3 +23,7 @@ class ExtractionFailed(BloodworkError):
 
 class StorageUnavailable(BloodworkError):
     """The results could not be stored"""
+
+
+class InvalidDateRange(BloodworkError):
+    """The requested date range is not valid"""
