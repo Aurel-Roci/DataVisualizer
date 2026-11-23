@@ -5,27 +5,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
-from ..adapters.outbound.influx_repository import InfluxBloodworkRepository
-from ..adapters.outbound.pdf_camelot import CamelotReportExtractor
-from ..application.use_cases import GetResults, UploadBloodwork
-from ..context_manager import get_db
-from ..core.config import get_settings
-from ..domain.errors import FileTooLarge
-from ..models.bloodwork_metadata import BloodworkMetadata
+from ....application.use_cases import GetResults, UploadBloodwork
+from ....core.config import get_settings
+from ....domain.errors import FileTooLarge
+from .dependencies import get_results_use_case, get_upload_use_case
+from .schemas import BloodworkMetadata
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 UPLOAD_CHUNK_SIZE = 64 * 1024
-
-
-def get_results_use_case(db: InfluxBloodworkRepository = Depends(get_db)) -> GetResults:
-    return GetResults(repository=db)
-
-
-def get_upload_use_case(db: InfluxBloodworkRepository = Depends(get_db)) -> UploadBloodwork:
-    return UploadBloodwork(extractor=CamelotReportExtractor(), repository=db)
 
 
 async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
