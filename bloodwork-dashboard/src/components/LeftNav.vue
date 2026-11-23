@@ -1,42 +1,41 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
 import { LayoutDashboard, History, SlidersHorizontal, Settings } from 'lucide-vue-next'
-
-const router = useRouter()
-const route = useRoute()
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'History', path: '/history', icon: History },
   { label: 'Reference Ranges', path: '/reference', icon: SlidersHorizontal },
 ]
-
-function navigate(path: string) {
-  router.push(path)
-}
+const settingsItem = { label: 'Settings', path: '/settings', icon: Settings }
 </script>
 
 <template>
-  <nav class="left-nav">
+  <nav class="left-nav" aria-label="Main">
     <div class="nav-logo">BW</div>
 
-    <div
+    <RouterLink
       v-for="item in navItems"
       :key="item.path"
+      :to="item.path"
       class="nav-icon"
-      :class="{ active: route.path === item.path }"
-      @click="navigate(item.path)"
+      active-class="active"
+      :aria-label="item.label"
     >
       <component :is="item.icon" :size="18" />
       <span class="tip">{{ item.label }}</span>
-    </div>
+    </RouterLink>
 
     <div class="nav-spacer" />
 
-    <div class="nav-icon" @click="navigate('/settings')">
-      <Settings :size="18" />
-      <span class="tip">Settings</span>
-    </div>
+    <RouterLink
+      :to="settingsItem.path"
+      class="nav-icon"
+      active-class="active"
+      :aria-label="settingsItem.label"
+    >
+      <component :is="settingsItem.icon" :size="18" />
+      <span class="tip">{{ settingsItem.label }}</span>
+    </RouterLink>
   </nav>
 </template>
 

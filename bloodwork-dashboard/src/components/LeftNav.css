@@ -32,6 +32,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  text-decoration: none;
   color: #8a95a3;
   position: relative;
   transition:
@@ -61,10 +62,16 @@
   transition: opacity 0.15s;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.nav-icon:hover .tip {
+.nav-icon:hover .tip,
+.nav-icon:focus-visible .tip {
   opacity: 1;
 }
 
 .nav-spacer {
   flex: 1;
+}
+
+.nav-icon:focus-visible {
+  outline: 2px solid #83c5be;
+  outline-offset: 2px;
 }
