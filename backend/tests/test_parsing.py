@@ -57,3 +57,24 @@ def test_parse_tables_skips_header_and_builds_record():
     assert record.patient_name == "Ada"
     assert record.test_date == "2026-03-14"
     assert [(r.test_name, r.value, r.unit) for r in record.results] == [("Glukoza", 91.7, "mg/dL")]
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        ["6.5 ACIDE", "6.3", "- 7.4    Ne Urine Casti"],  # name is a value, range lost its lower bound
+        ["Eritrocite (RBCs)", "0", "- 5 FUSHE"],  # range lost its lower bound: no real value
+        ["11 - 16    %", "12.5", "RDW-CV RBC"],  # name is a range
+        ["2-4/FUSHE", "0", "- 5 /FUSHE"],
+        ["1 of 2", "15", "/12/2022 12:24:13"],  # page marker
+        ["400b61a0-1b13-4f16-86d9-54b4aea59a11", "13.6", "%"],  # UUID
+    ],
+)
+def test_junk_rows_are_rejected(row):
+    assert parse_test_row(row, "2026-03-14") is None
+
+
+def test_names_starting_with_digits_are_kept():
+    result = parse_test_row(["25-OH Vitamin D", "31.2", "30 - 100 ng/mL"], "2026-03-14")
+    assert result is not None
+    assert result.test_name == "25-OH Vitamin D"

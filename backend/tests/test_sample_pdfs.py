@@ -15,7 +15,7 @@ SAMPLE_DIR = Path(os.getenv("SAMPLE_PDF_DIR", "~/Downloads/analyza")).expanduser
 
 # file -> (number of results, test date)
 SAMPLES = {
-    "2026-03-14/ROCI AUREL-197802.pdf": (47, "2026-03-14"),
+    "2026-03-14/ROCI AUREL-197802.pdf": (45, "2026-03-14"),
     "2025-09-01/chol.pdf": (17, "2025-09-02"),
 }
 

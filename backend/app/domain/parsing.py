@@ -116,6 +116,15 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
             logger.debug(f"No numeric value found in parts: {filtered_parts}")
             return None
 
+        if not is_plausible_test_name(test_name):
+            logger.debug(f"Skipping row, implausible test name: {test_name!r}")
+            return None
+        # A range starting with "-" means the number taken as the value was really
+        # the range's lower bound (e.g. "40 - 278 mg/dL"): there is no actual result
+        if reference_range.startswith("-"):
+            logger.debug(f"Skipping row, range lost its lower bound: {reference_range!r}")
+            return None
+
         # Extract unit from reference range if possible
         unit = extract_unit_from_range(reference_range)
 
@@ -133,6 +142,18 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
     except Exception as e:
         logger.warning(f"Error parsing row {row}: {e}")
         return None
+
+
+def is_plausible_test_name(name: str) -> bool:
+    """Reject cells that are not marker names: ranges ("11 - 16 %"), values with a
+    label ("6.5 ACIDE"), page markers ("1 of 2") and ids/UUIDs"""
+    if not re.search(r"[^\W\d_]{2}", name):  # needs at least two consecutive letters
+        return False
+    # Starts like a number followed by a separator/space ("6.5 ACIDE", "2-4/FUSHE"),
+    # but not names such as "25-OH Vitamin D"
+    if re.match(r"^\d+(?:[.,]\d+)?\s*(?:\s|-\s*\d|/)", name):
+        return False
+    return not re.fullmatch(r"[0-9a-fA-F-]{16,}", name.replace(" ", ""))
 
 
 def extract_unit_from_range(reference_range: str) -> str:
