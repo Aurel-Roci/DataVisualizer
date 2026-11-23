@@ -2,10 +2,12 @@ import io
 import logging
 import os
 import re
+import tempfile
 from datetime import datetime
 
 import pdfplumber
 from fastapi import HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
 
@@ -35,17 +37,16 @@ async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
     return b"".join(chunks)
 
 
-async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
-    """Extract structured data from PDF using pdfplumber"""
+def _extract_pdf_sync(file_content: bytes, user_bday: str | None) -> dict:
+    """Blocking PDF extraction (camelot + pdfplumber); run in a worker thread"""
+    import camelot
 
-    try:
-        file_content = await read_upload_limited(file, get_max_file_size())
-        logger.info(f"Processing file: {file.filename}, size: {len(file_content)} bytes")
-
-        import camelot
-
+    # Camelot needs a real file path; the upload stream is already consumed
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp:
+        tmp.write(file_content)
+        tmp.flush()
         tables = camelot.read_pdf(
-            file.file,
+            tmp.name,
             pages="all",
             line_scale=25,
             joint_tol=10,
@@ -55,19 +56,29 @@ async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
             iterations=3,
             resolution=720,
         )
-        logger.info(f"CAMELOT table {tables}")
+    logger.info(f"Camelot found {len(tables)} table(s)")
 
-        with pdfplumber.open(io.BytesIO(file_content)) as pdf:
-            # Get the first page for all text metadata
-            page = pdf.pages[0]
-        full_text = page.extract_text()
-        result = {
-            "full_text": full_text,
-            "tables": tables,
-            "date": extract_test_date(full_text, user_bday),
-        }
+    with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+        # Get the first page for all text metadata
+        full_text = pdf.pages[0].extract_text()
 
-        logger.info("Successfully extracted structured data using pdfplumber")
+    return {
+        "full_text": full_text,
+        "tables": tables,
+        "date": extract_test_date(full_text, user_bday),
+    }
+
+
+async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
+    """Extract structured data from a PDF using camelot and pdfplumber"""
+
+    try:
+        file_content = await read_upload_limited(file, get_max_file_size())
+        logger.info(f"Processing file: {file.filename}, size: {len(file_content)} bytes")
+
+        result = await run_in_threadpool(_extract_pdf_sync, file_content, user_bday)
+
+        logger.info("Successfully extracted structured data from PDF")
         return result
 
     except HTTPException:
