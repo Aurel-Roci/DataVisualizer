@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from "vue-router";
-import { LayoutDashboard, History, SlidersHorizontal, Settings } from "lucide-vue-next";
+import { useRoute, useRouter } from 'vue-router'
+import { LayoutDashboard, History, SlidersHorizontal, Settings } from 'lucide-vue-next'
 
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 const navItems = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
-  { label: "History", path: "/history", icon: History },
-  { label: "Reference Ranges", path: "/reference", icon: SlidersHorizontal },
-];
+  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'History', path: '/history', icon: History },
+  { label: 'Reference Ranges', path: '/reference', icon: SlidersHorizontal },
+]
 
 function navigate(path: string) {
-  router.push(path);
+  router.push(path)
 }
 </script>
 

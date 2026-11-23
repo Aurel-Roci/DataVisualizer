@@ -1,9 +1,14 @@
 <script setup lang="ts">
 defineProps<{
-  title: string;
-  subtitle: string;
-  rangeLabel: string;
-}>();
+  title: string
+  subtitle: string
+}>()
+
+// YYYY-MM-DD strings, bound to the date inputs
+const from = defineModel<string>('from', { required: true })
+const to = defineModel<string>('to', { required: true })
+
+defineEmits<{ (e: 'add'): void }>()
 </script>
 
 <template>
@@ -14,8 +19,12 @@ defineProps<{
     </div>
 
     <div class="topbar-right">
-      <div v-if="rangeLabel" class="date-range">📅 {{ rangeLabel }}</div>
-      <button class="btn-primary">+ Add Result</button>
+      <div class="date-range">
+        <input v-model="from" type="date" :max="to" aria-label="From date" />
+        <span>–</span>
+        <input v-model="to" type="date" :min="from" aria-label="To date" />
+      </div>
+      <button type="button" class="btn-primary" @click="$emit('add')">+ Add Result</button>
     </div>
   </header>
 </template>
@@ -55,21 +64,24 @@ defineProps<{
 }
 
 .date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: #4a5568;
+}
+.date-range input {
+  font: inherit;
+  color: inherit;
   background: #eef1f5;
   border: 1px solid #dde2ea;
-  padding: 5px 12px;
+  padding: 4px 8px;
   border-radius: 6px;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    color 0.15s;
 }
-.date-range:hover {
+.date-range input:focus-visible {
+  outline: 2px solid var(--accent-mid);
   border-color: #006d77;
-  color: #006d77;
 }
 
 .btn-primary {

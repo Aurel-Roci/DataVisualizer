@@ -1,48 +1,53 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
-import TopBar from "../components/TopBar.vue";
-import ChartCard from "../components/ChartCard.vue";
-import RightSidebar from "../components/RightSidebar.vue";
-import { useBloodworkStore } from "../stores/bloodwork";
+import { computed, ref, watch } from 'vue'
+import TopBar from '../components/TopBar.vue'
+import ChartCard from '../components/ChartCard.vue'
+import UploadDialog from '../components/UploadDialog.vue'
+import RightSidebar from '../components/RightSidebar.vue'
+import { useBloodworkStore } from '../stores/bloodwork'
 
-const store = useBloodworkStore();
+const store = useBloodworkStore()
+const uploadOpen = ref(false)
 
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
+// local calendar date as YYYY-MM-DD (toISOString would shift to UTC)
+function localDate(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
 // default window: the last two years
-onMounted(() => {
-  const end = new Date();
-  const start = new Date(end);
-  start.setFullYear(end.getFullYear() - 2);
-  store.fetchResults(`${isoDate(start)}T00:00:00`, `${isoDate(end)}T23:59:59`);
-});
+const today = new Date()
+const twoYearsAgo = new Date(today)
+twoYearsAgo.setFullYear(today.getFullYear() - 2)
+const from = ref(localDate(twoYearsAgo))
+const to = ref(localDate(today))
 
-function formatMonth(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
+// refetch whenever a complete, valid range is picked (also runs on mount)
+watch(
+  [from, to],
+  ([f, t]) => {
+    if (f && t && f <= t) store.fetchResults(`${f}T00:00:00`, `${t}T23:59:59`)
+  },
+  { immediate: true },
+)
 
-const rangeLabel = computed(() =>
-  store.startDate ? `${formatMonth(store.startDate)} – ${formatMonth(store.endDate)}` : "",
-);
-const subtitle = computed(() =>
-  store.startDate
-    ? `${store.startDate.slice(0, 7)} → ${store.endDate.slice(0, 7)}`
-    : "loading…",
-);
+const subtitle = computed(() => (store.startDate ? `${from.value} → ${to.value}` : 'loading…'))
 </script>
 
 <template>
   <div class="dashboard">
-    <TopBar title="Bloodwork Dashboard" :subtitle="subtitle" :range-label="rangeLabel" />
+    <TopBar
+      title="Bloodwork Dashboard"
+      v-model:from="from"
+      v-model:to="to"
+      :subtitle="subtitle"
+      @add="uploadOpen = true"
+    />
 
     <div class="content">
       <p v-if="store.loading" class="state">Loading…</p>
       <p v-else-if="store.error" class="state error">Error: {{ store.error }}</p>
-      <p v-else-if="store.markers.length === 0" class="state">
-        No results in this date range.
-      </p>
+      <p v-else-if="store.markers.length === 0" class="state">No results in this date range.</p>
       <p v-else-if="store.panels.length === 0" class="state">
         No markers selected. Pick some in the sidebar and press Apply Layout.
       </p>
@@ -55,6 +60,7 @@ const subtitle = computed(() =>
     </div>
 
     <RightSidebar />
+    <UploadDialog v-if="uploadOpen" @close="uploadOpen = false" />
   </div>
 </template>
 

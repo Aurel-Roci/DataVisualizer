@@ -1,5 +1,5 @@
-import { createApp } from "vue";
-import { createPinia } from "pinia";
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import {
   Chart as ChartJS,
   LineElement,
@@ -10,11 +10,11 @@ import {
   Tooltip,
   Legend,
   Filler,
-} from "chart.js";
+} from 'chart.js'
 
-import "./assets/main.css";
-import App from "./App.vue";
-import router from "./router";
+import './assets/main.css'
+import App from './App.vue'
+import router from './router'
 
 ChartJS.register(
   LineElement,
@@ -25,11 +25,11 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler,
-);
+)
 
-const app = createApp(App);
+const app = createApp(App)
 
-app.use(createPinia());
-app.use(router);
+app.use(createPinia())
+app.use(router)
 
-app.mount("#app");
+app.mount('#app')

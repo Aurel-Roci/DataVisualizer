@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useBloodworkStore } from "../stores/bloodwork";
+import { computed, ref } from 'vue'
+import { useBloodworkStore } from '../stores/bloodwork'
 
-const store = useBloodworkStore();
+const store = useBloodworkStore()
 
-const open = ref<Set<string>>(new Set());
+const open = ref<Set<string>>(new Set())
 
 function toggleOpen(name: string) {
-  const next = new Set(open.value);
-  if (!next.delete(name)) next.add(name);
-  open.value = next;
+  const next = new Set(open.value)
+  if (!next.delete(name)) next.add(name)
+  open.value = next
 }
 
-const selected = computed(() => new Set(store.draft.selected));
-const totalMarkers = computed(() => store.markers.length);
+const selected = computed(() => new Set(store.draft.selected))
+const totalMarkers = computed(() => store.markers.length)
 
 function selectedIn(group: { markers: { test_name: string }[] }) {
-  return group.markers.filter((m) => selected.value.has(m.test_name)).length;
+  return group.markers.filter((m) => selected.value.has(m.test_name)).length
 }
 </script>
 
@@ -74,9 +74,7 @@ function selectedIn(group: { markers: { test_name: string }[] }) {
       <div class="sidebar-stat">
         <span>Panels shown</span><span>{{ store.panels.length }}</span>
       </div>
-      <div class="sidebar-stat">
-        <span>Markers active</span><span>{{ selected.size }}</span>
-      </div>
+      <div class="sidebar-stat"><span>Markers active</span><span>{{ selected.size }}</span></div>
       <button type="button" class="btn-apply" @click="store.applyLayout()">Apply Layout</button>
     </div>
   </aside>
@@ -219,7 +217,7 @@ function selectedIn(group: { markers: { test_name: string }[] }) {
   border-color: var(--accent);
 }
 .cb:checked::after {
-  content: "";
+  content: '';
   width: 4px;
   height: 7px;
   border: 1.5px solid #fff;
@@ -249,7 +247,7 @@ function selectedIn(group: { markers: { test_name: string }[] }) {
   background: var(--accent);
 }
 .toggle::after {
-  content: "";
+  content: '';
   width: 11px;
   height: 11px;
   border-radius: 50%;

@@ -18,9 +18,9 @@
   --left-nav-w: 64px;
   --right-panel-w: 284px;
 
-  --font-sans: "Karla", sans-serif;
-  --font-serif: "DM Serif Display", serif;
-  --font-mono: "DM Mono", monospace;
+  --font-sans: 'Karla', sans-serif;
+  --font-serif: 'DM Serif Display', serif;
+  --font-mono: 'DM Mono', monospace;
 
   /* series palette */
   --c1: #006d77;
