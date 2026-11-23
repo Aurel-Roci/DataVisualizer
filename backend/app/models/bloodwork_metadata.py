@@ -3,10 +3,20 @@ from datetime import datetime
 
 from pydantic import BaseModel, field_validator
 
+DEFAULT_PATIENT_NAME = "unknown"
+
 
 class BloodworkMetadata(BaseModel):
-    name: str | None = None
+    name: str = DEFAULT_PATIENT_NAME
     birthday: str | None = None
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def default_blank_name(cls, v):
+        """Influx drops a None tag silently, so always tag records with a patient"""
+        if v is None or not str(v).strip():
+            return DEFAULT_PATIENT_NAME
+        return str(v).strip()
 
     @field_validator("birthday")
     @classmethod
@@ -34,6 +44,6 @@ class BloodworkResult:
 class BloodworkRecord:
     """Data class for complete bloodwork record"""
 
-    patient_name: str | None
+    patient_name: str
     test_date: datetime
     results: list[BloodworkResult]

@@ -88,7 +88,7 @@ async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
         raise Exception("Could not extract text from PDF") from e
 
 
-def parse_blood_work_table(extracted_data: dict, name: str | None) -> BloodworkRecord:
+def parse_blood_work_table(extracted_data: dict, name: str) -> BloodworkRecord:
     """Parse blood work tables and extract test results"""
 
     date = extracted_data["date"]
