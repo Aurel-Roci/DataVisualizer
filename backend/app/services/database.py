@@ -67,7 +67,7 @@ class InfluxDBService:
             return True
 
         except Exception as e:
-            logging.exception(f"Error storing bloodwork record {e}")
+            logger.exception(f"Error storing bloodwork record: {e}")
             return False
 
     def get_patient_tests(

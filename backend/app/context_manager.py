@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -5,17 +6,19 @@ from fastapi.datastructures import State
 
 from .services.database import InfluxDBService
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup - create database service once
-    print("Starting up...")
+    logger.info("Starting up...")
 
     db_service = InfluxDBService()
     app.state.db = db_service
     yield
     # Shutdown - clean up
-    print("Shutting down...")
+    logger.info("Shutting down...")
     app.state.db.close()
     app.state = State()
 
