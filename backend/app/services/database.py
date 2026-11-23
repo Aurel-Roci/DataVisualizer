@@ -45,6 +45,11 @@ class InfluxDBService:
             # Prepare data points for batch write
             points = []
             for result in record.results:
+                fields: dict[str, float | str] = {"value": float(result.value)}
+                # Free-text and high cardinality, so a field rather than a tag
+                if result.reference_range:
+                    fields["reference_range"] = result.reference_range
+
                 point = {
                     "measurement": "bloodwork",
                     "tags": {
@@ -52,13 +57,9 @@ class InfluxDBService:
                         "test_name": result.test_name,
                         "unit": result.unit,
                     },
-                    "fields": {"value": float(result.value)},
+                    "fields": fields,
                     "time": record.test_date,
                 }
-
-                # Add optional tags
-                if result.reference_range:
-                    point["tags"]["reference_range"] = result.reference_range
 
                 points.append(point)
 
