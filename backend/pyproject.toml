@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Parse pdf data and store them in a timeseries DB"
 requires-python = ">=3.13"
 dependencies = [
+    # <2: camelot 2.x splits chol.pdf into a fragmented 21-column table (47% accuracy vs 99.7% on 1.x)
     "camelot-py>=1.0.9,<2",
     "fastapi>=0.165.0",
     "influxdb3-python>=0.21.0",
