@@ -12,7 +12,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 22px 24px;
-  width: 380px;
+  width: 420px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -37,12 +37,54 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
-.error {
-  font-size: 12px;
-  color: var(--danger);
-}
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.file-list {
+  list-style: none;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.file-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.file-list li:last-child {
+  border-bottom: none;
+}
+.file-status {
+  width: 12px;
+  text-align: center;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-error {
+  color: var(--danger);
+  font-size: 11px;
+}
+.file-list .done .file-status {
+  color: var(--ok);
+}
+.file-list .failed .file-status {
+  color: var(--danger);
+}
+.file-list .uploading {
+  color: var(--text-primary);
 }

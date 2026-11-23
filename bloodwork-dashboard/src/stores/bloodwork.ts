@@ -47,11 +47,6 @@ export const useBloodworkStore = defineStore('bloodwork', () => {
     return fetchResults(startDate.value, endDate.value)
   }
 
-  async function upload(file: File, metadata?: api.UploadMetadata) {
-    await api.uploadBloodwork(file, metadata)
-    await refresh()
-  }
-
   return {
     results,
     loading,
@@ -62,6 +57,5 @@ export const useBloodworkStore = defineStore('bloodwork', () => {
     groups,
     fetchResults,
     refresh,
-    upload,
   }
 })
