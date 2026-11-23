@@ -1,15 +1,14 @@
 import logging
-import os
 from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 
 from ..context_manager import get_db
+from ..core.config import get_settings
 from ..models.bloodwork_metadata import BloodworkMetadata
 from ..services.bloodwork import handle_bloodwork
 from ..services.database import InfluxDBService
-from ..services.pdf_parser import get_allowed_extensions, get_max_file_size
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ async def root():
 @router.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "influxdb_configured": bool(os.getenv("INFLUXDB_HOST"))}
+    return {"status": "healthy", "influxdb_configured": bool(get_settings().influxdb_host)}
 
 
 @router.post("/upload-bloodwork")
@@ -37,7 +36,8 @@ async def upload_bloodwork(
     name: str | None = Form(None),
 ):
     """Upload and parse a blood work PDF file"""
-    max_size = get_max_file_size()
+    settings = get_settings()
+    max_size = settings.max_file_size
     content_length = request.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > max_size:
         raise HTTPException(status_code=413, detail=f"File too large. Maximum size: {max_size} bytes")
@@ -48,7 +48,7 @@ async def upload_bloodwork(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     extension = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
-    if extension not in get_allowed_extensions():
+    if extension not in settings.allowed_extensions:
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     return await handle_bloodwork(db, file, metadata)

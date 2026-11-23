@@ -1,16 +1,14 @@
-import logging
-import os
-
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.endpoints import router
 from .context_manager import lifespan
+from .core.config import get_settings
+from .core.logging import setup_logging
 
-load_dotenv()
-logging.basicConfig(level=logging.INFO)
+settings = get_settings()
+setup_logging(settings.log_level)
 
 app = FastAPI(
     lifespan=lifespan,
@@ -32,6 +30,6 @@ app.include_router(router)
 if __name__ == "__main__":
     uvicorn.run(
         app,
-        host=os.getenv("API_HOST", "0.0.0.0"),
-        port=int(os.getenv("API_PORT", "8000")),
+        host=settings.api_host,
+        port=settings.api_port,
     )

@@ -1,10 +1,10 @@
 import logging
-import os
 from datetime import datetime, timedelta
 
 import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
 
+from ..core.config import get_settings
 from ..models.bloodwork_metadata import BloodworkRecord
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,10 @@ class InfluxDBService:
             token: Authentication token
             database: Database name (defaults to INFLUXDB_DATABASE, then "bloodwork")
         """
-        self.host = host or os.getenv("INFLUXDB_HOST")
-        self.token = token or os.getenv("INFLUXDB_TOKEN")
-        self.database = database or os.getenv("INFLUXDB_DATABASE", "bloodwork")
+        settings = get_settings()
+        self.host = host or settings.influxdb_host
+        self.token = token or settings.influxdb_token
+        self.database = database or settings.influxdb_database
 
         if not self.host or not self.token:
             raise ValueError("InfluxDB host and token must be provided")

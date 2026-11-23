@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 import re
 import tempfile
 from datetime import datetime
@@ -9,22 +8,12 @@ import pdfplumber
 from fastapi import HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
+from ..core.config import get_settings
 from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
 
 logger = logging.getLogger(__name__)
 
 UPLOAD_CHUNK_SIZE = 64 * 1024
-
-
-def get_max_file_size() -> int:
-    """Maximum accepted upload size in bytes (default 10MB)"""
-    return int(os.getenv("MAX_FILE_SIZE", "10485760"))
-
-
-def get_allowed_extensions() -> set[str]:
-    """Accepted upload extensions, lowercase without the dot (default: pdf)"""
-    raw = os.getenv("ALLOWED_EXTENSIONS", "pdf")
-    return {ext.strip().lower().lstrip(".") for ext in raw.split(",") if ext.strip()}
 
 
 async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
@@ -78,7 +67,7 @@ async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
     """Extract structured data from a PDF using camelot and pdfplumber"""
 
     try:
-        file_content = await read_upload_limited(file, get_max_file_size())
+        file_content = await read_upload_limited(file, get_settings().max_file_size)
         # Extension and content-type are client-controlled; check the file itself
         if not file_content.lstrip().startswith(b"%PDF-"):
             raise HTTPException(status_code=400, detail="File is not a valid PDF")
