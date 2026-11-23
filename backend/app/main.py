@@ -1,3 +1,4 @@
+import logging
 import os
 
 import uvicorn
@@ -9,6 +10,7 @@ from .api.endpoints import router
 from .context_manager import lifespan
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     lifespan=lifespan,

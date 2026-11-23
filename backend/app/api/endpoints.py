@@ -12,8 +12,6 @@ from ..services.bloodwork import handle_bloodwork
 from ..services.database import InfluxDBService
 from ..services.pdf_parser import get_max_file_size
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

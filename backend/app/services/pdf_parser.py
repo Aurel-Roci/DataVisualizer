@@ -11,7 +11,6 @@ from fastapi.concurrency import run_in_threadpool
 
 from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 UPLOAD_CHUNK_SIZE = 64 * 1024
@@ -74,7 +73,7 @@ async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
 
     try:
         file_content = await read_upload_limited(file, get_max_file_size())
-        logger.info(f"Processing file: {file.filename}, size: {len(file_content)} bytes")
+        logger.info(f"Processing upload, size: {len(file_content)} bytes")
 
         result = await run_in_threadpool(_extract_pdf_sync, file_content, user_bday)
 
@@ -100,9 +99,10 @@ def parse_blood_work_table(extracted_data: dict, name: str) -> BloodworkRecord:
     for table_idx, table in enumerate(tables):
         df = table.df  # Get the pandas DataFrame
         table_as_lists = df.values.tolist()  # Convert to list of lists
-        logger.info(f"Parsing report: {table.parsing_report}")
-        logger.info(f"Parsing table {table_idx}: {table_as_lists}")
-        # logger.info(f"Processing table {table_idx + 1} with {len(table_as_lists)} rows")
+        # Row contents are medical data: only counts at INFO, contents at DEBUG
+        logger.info(f"Parsing table {table_idx}: {len(table_as_lists)} rows")
+        logger.debug(f"Parsing report: {table.parsing_report}")
+        logger.debug(f"Table {table_idx} rows: {table_as_lists}")
 
         # Find the header row (usually contains 'REZULTATI' and 'VLERAT REFERUESE')
         header_row_idx = find_header_row(table_as_lists)
@@ -184,8 +184,6 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
             # Try to extract a numeric value
             if value is None:
                 # Look for a number at the start of the part
-                import re
-
                 number_match = re.match(r"^(\d+\.?\d*)", part)
                 if number_match:
                     try:
@@ -222,7 +220,7 @@ def parse_test_row(row: list[str], date: str) -> BloodworkResult | None:
             test_date=date,
         )
 
-        logger.info(f"Parsed: {test_name} = {value} {unit}")
+        logger.debug(f"Parsed: {test_name} = {value} {unit}")
         return result
 
     except Exception as e:
