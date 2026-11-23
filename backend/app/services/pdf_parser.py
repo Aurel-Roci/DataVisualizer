@@ -253,10 +253,22 @@ def extract_unit_from_range(reference_range: str) -> str:
         if unit in reference_range:
             return unit
 
-    # Look for other patterns
-    unit_match = re.search(r"([a-zA-Z/μ]+)", reference_range)
+    # Count-style units as printed in reports, e.g. x10³/uL, x106/uL, 10^3/µL
+    # (checked first: "10³/uL" would otherwise be seen as plain "uL")
+    count_match = re.search(r"x?10[^\s/]{0,3}/[a-zA-Zμµ]{1,3}", reference_range)
+    if count_match:
+        return count_match.group(0)
+
+    # Standalone units without a slash
+    for unit in ("fL", "pg"):
+        if re.search(rf"\b{unit}\b", reference_range):
+            return unit
+
+    # Other compound units such as mEq/L, g/24h. Plain words (e.g.
+    # "Normal", "max") are not units, so anything without a "/" is ignored.
+    unit_match = re.search(r"[a-zA-Zμµ]{1,6}/[a-zA-Zμµ]{1,6}\d*", reference_range)
     if unit_match:
-        return unit_match.group(1)
+        return unit_match.group(0)
 
     return ""
 
