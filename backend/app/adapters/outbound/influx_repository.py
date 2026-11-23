@@ -4,15 +4,15 @@ from datetime import datetime, timedelta
 import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
 
-from ..core.config import get_settings
-from ..domain.errors import StorageUnavailable
-from ..domain.models import BloodworkRecord
+from ...core.config import get_settings
+from ...domain.errors import StorageUnavailable
+from ...domain.models import BloodworkRecord
 
 logger = logging.getLogger(__name__)
 
 
-class InfluxDBService:
-    """Service class for InfluxDB v3 operations"""
+class InfluxBloodworkRepository:
+    """BloodworkRepository port implementation backed by InfluxDB v3"""
 
     def __init__(self, host: str | None = None, token: str | None = None, database: str | None = None):
         """

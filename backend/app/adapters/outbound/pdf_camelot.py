@@ -4,8 +4,8 @@ import tempfile
 
 import pdfplumber
 
-from ..application.ports import ExtractedReport
-from ..domain.errors import ExtractionFailed, InvalidReport
+from ...application.ports import ExtractedReport
+from ...domain.errors import ExtractionFailed, InvalidReport
 
 logger = logging.getLogger(__name__)
 

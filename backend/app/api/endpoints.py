@@ -5,13 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
+from ..adapters.outbound.influx_repository import InfluxBloodworkRepository
+from ..adapters.outbound.pdf_camelot import CamelotReportExtractor
 from ..application.use_cases import UploadBloodwork
 from ..context_manager import get_db
 from ..core.config import get_settings
 from ..domain.errors import FileTooLarge
 from ..models.bloodwork_metadata import BloodworkMetadata
-from ..services.database import InfluxDBService
-from ..services.pdf_parser import CamelotReportExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ router = APIRouter()
 UPLOAD_CHUNK_SIZE = 64 * 1024
 
 
-def get_upload_use_case(db: InfluxDBService = Depends(get_db)) -> UploadBloodwork:
+def get_upload_use_case(db: InfluxBloodworkRepository = Depends(get_db)) -> UploadBloodwork:
     return UploadBloodwork(extractor=CamelotReportExtractor(), repository=db)
 
 
@@ -88,7 +88,7 @@ async def upload_bloodwork(
 async def get_results(
     start_date: datetime,
     end_date: datetime,
-    db: InfluxDBService = Depends(get_db),
+    db: InfluxBloodworkRepository = Depends(get_db),
     test_names: Annotated[list[str] | None, Query()] = None,
 ):
     """Get blood work results for date range (end_date is inclusive of the whole day)"""
