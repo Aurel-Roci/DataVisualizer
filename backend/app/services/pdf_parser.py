@@ -59,8 +59,8 @@ def _extract_pdf_sync(file_content: bytes, user_bday: str | None) -> dict:
     logger.info(f"Camelot found {len(tables)} table(s)")
 
     with pdfplumber.open(io.BytesIO(file_content)) as pdf:
-        # Get the first page for all text metadata
-        full_text = pdf.pages[0].extract_text()
+        # Text from every page, so a date missing from page 1 can still be found
+        full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
 
     return {
         "full_text": full_text,
