@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime
 
 from pydantic import BaseModel, field_validator
@@ -27,23 +26,3 @@ class BloodworkMetadata(BaseModel):
             except ValueError:
                 raise ValueError("Birthday must be in DD/MM/YYYY format") from None
         return v
-
-
-@dataclass
-class BloodworkResult:
-    """Data class for individual bloodwork test result"""
-
-    test_name: str
-    value: float
-    unit: str
-    test_date: str
-    reference_range: str | None = None
-
-
-@dataclass
-class BloodworkRecord:
-    """Data class for complete bloodwork record"""
-
-    patient_name: str
-    test_date: datetime
-    results: list[BloodworkResult]

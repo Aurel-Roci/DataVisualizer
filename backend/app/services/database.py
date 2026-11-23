@@ -5,7 +5,7 @@ import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
 
 from ..core.config import get_settings
-from ..models.bloodwork_metadata import BloodworkRecord
+from ..domain.models import BloodworkRecord
 
 logger = logging.getLogger(__name__)
 

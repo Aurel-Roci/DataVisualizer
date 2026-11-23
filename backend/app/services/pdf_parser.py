@@ -9,7 +9,7 @@ from fastapi import HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from ..core.config import get_settings
-from ..models.bloodwork_metadata import BloodworkRecord, BloodworkResult
+from ..domain.models import BloodworkRecord, BloodworkResult
 
 logger = logging.getLogger(__name__)
 
