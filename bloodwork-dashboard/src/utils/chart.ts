@@ -10,8 +10,13 @@ const STATUS_COLOR: Record<Status, string> = {
   none: '#8a95a3',
 }
 
-export function formatMonth(time: string): string {
-  return new Date(time).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+// e.g. "Mar 14, 26". Day-level so two results in one month get distinct labels.
+export function formatDay(time: string): string {
+  return new Date(time).toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: '2-digit',
+  })
 }
 
 export function latestPoint(marker: Marker): DataPoint | undefined {
@@ -35,7 +40,7 @@ export function buildChartData(series: Marker[], colors: string[]): ChartData<'l
   const times = [...new Set(series.flatMap((m) => m.data.map((d) => d.time)))].sort()
 
   return {
-    labels: times.map(formatMonth),
+    labels: times.map(formatDay),
     datasets: series.map((marker, i) => {
       const valueAt = new Map(marker.data.map((d) => [d.time, d.value]))
       const color = colors[i]!

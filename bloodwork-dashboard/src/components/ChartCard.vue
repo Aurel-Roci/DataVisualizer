@@ -6,7 +6,7 @@ import { parseRange, statusFor, worstStatus } from '../utils/range'
 import {
   buildChartData,
   buildChartOptions,
-  formatMonth,
+  formatDay,
   latestPoint,
   latestTime,
   referenceBandPlugin,
@@ -34,7 +34,7 @@ const colors = computed(() => seriesColors(props.series, status.value))
 
 const latestDate = computed(() => {
   const time = latestTime(props.series)
-  return time ? formatMonth(time) : ''
+  return time ? formatDay(time) : ''
 })
 
 const legend = computed(() =>
