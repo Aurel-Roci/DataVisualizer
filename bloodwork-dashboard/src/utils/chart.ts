@@ -2,7 +2,17 @@ import type { ChartData, ChartOptions, Plugin } from 'chart.js'
 import type { DataPoint, Marker } from '../types/bloodwork'
 import type { ParsedRange, Status } from './range'
 
-const PALETTE = ['#006d77', '#d4831a', '#6b5ea8', '#2d7a4f']
+// red is left out on purpose: it signals an out-of-range value
+const PALETTE = [
+  '#006d77',
+  '#d4831a',
+  '#6b5ea8',
+  '#2d7a4f',
+  '#3b82c4',
+  '#b5457b',
+  '#8a7a2a',
+  '#5f6b7a',
+]
 const STATUS_COLOR: Record<Status, string> = {
   ok: '#2d7a4f',
   warning: '#d4831a',
