@@ -69,6 +69,8 @@ const status = computed<{ text: string; isError: boolean } | null>(() => {
         :key="panel.id"
         :title="panel.title"
         :series="panel.series"
+        :hidden="layout.hidden"
+        @toggle="layout.toggleHidden"
       />
     </div>
 

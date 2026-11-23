@@ -67,8 +67,22 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 2px 6px;
+  margin: 0 -6px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
   font-size: 12px;
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.legend-item:hover {
+  background: var(--surface-alt);
+}
+.legend-item:focus-visible {
+  outline: 2px solid var(--accent-mid);
 }
 
 .legend-line {
@@ -76,6 +90,17 @@
   height: 2.5px;
   border-radius: 2px;
   flex-shrink: 0;
+  background: var(--line);
+}
+
+.legend-item.off {
+  opacity: 0.45;
+}
+.legend-item.off .legend-line {
+  background: var(--text-muted);
+}
+.legend-item.off .legend-name {
+  text-decoration: line-through;
 }
 
 .legend-value {

@@ -16,9 +16,14 @@ import {
 const props = defineProps<{
   title: string
   series: Marker[]
+  hidden: string[] // names of series greyed out by the user
 }>()
 
+const emit = defineEmits<{ (e: 'toggle', testName: string): void }>()
+
 const isSingle = computed(() => props.series.length === 1)
+
+const isVisible = (m: Marker) => !props.hidden.includes(m.test_name)
 
 // worst status among the latest values of all series
 const status = computed(() =>
@@ -41,13 +46,20 @@ const legend = computed(() =>
   props.series.map((m, i) => ({
     name: m.test_name,
     color: colors.value[i]!,
+    visible: isVisible(m),
     value: latestPoint(m)?.value ?? null,
     unit: m.unit,
   })),
 )
 
-const chartData = computed(() => buildChartData(props.series, colors.value))
-const chartOptions = computed(() => buildChartOptions(props.series))
+// only the visible series are plotted; colours stay tied to each series' position
+const visibleSeries = computed(() => props.series.filter(isVisible))
+const visibleColors = computed(() => colors.value.filter((_, i) => isVisible(props.series[i]!)))
+
+const chartData = computed(() =>
+  buildChartData(visibleSeries.value, visibleColors.value, isSingle.value),
+)
+const chartOptions = computed(() => buildChartOptions(visibleSeries.value))
 
 // the reference band only makes sense when the chart has a single series
 const plugins = computed(() => {
@@ -65,11 +77,20 @@ const plugins = computed(() => {
     </div>
 
     <div class="card-legend">
-      <div v-for="item in legend" :key="item.name" class="legend-item">
-        <div class="legend-line" :style="{ background: item.color }" />
-        {{ item.name }}
+      <button
+        v-for="item in legend"
+        :key="item.name"
+        type="button"
+        class="legend-item"
+        :class="{ off: !item.visible }"
+        :aria-pressed="item.visible"
+        :title="item.visible ? `Hide ${item.name}` : `Show ${item.name}`"
+        @click="emit('toggle', item.name)"
+      >
+        <span class="legend-line" :style="{ '--line': item.color }" />
+        <span class="legend-name">{{ item.name }}</span>
         <span class="legend-value">{{ item.value }} {{ item.unit }}</span>
-      </div>
+      </button>
     </div>
 
     <div class="chart-body" :class="{ single: isSingle }">

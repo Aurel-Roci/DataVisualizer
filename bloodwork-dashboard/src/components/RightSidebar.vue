@@ -6,12 +6,16 @@ import { useLayoutStore } from '../stores/layout'
 const bloodwork = useBloodworkStore()
 const layout = useLayoutStore()
 
-const open = ref<Set<string>>(new Set())
+// Groups are expanded by default; we only remember the ones the user collapsed,
+// so groups that show up later (e.g. after changing the date range) start expanded too.
+const collapsed = ref<Set<string>>(new Set())
+
+const isOpen = (name: string) => !collapsed.value.has(name)
 
 function toggleOpen(name: string) {
-  const next = new Set(open.value)
+  const next = new Set(collapsed.value)
   if (!next.delete(name)) next.add(name)
-  open.value = next
+  collapsed.value = next
 }
 
 const selected = computed(() => new Set(layout.draft.selected))
@@ -38,12 +42,12 @@ function selectedIn(group: { markers: { test_name: string }[] }) {
         v-for="group in bloodwork.groups"
         :key="group.name"
         class="group-block"
-        :class="{ open: open.has(group.name) }"
+        :class="{ open: isOpen(group.name) }"
       >
         <button
           type="button"
           class="group-header"
-          :aria-expanded="open.has(group.name)"
+          :aria-expanded="isOpen(group.name)"
           @click="toggleOpen(group.name)"
         >
           <span class="chevron">▶</span>
@@ -51,7 +55,7 @@ function selectedIn(group: { markers: { test_name: string }[] }) {
           <span class="group-count">{{ selectedIn(group) }} / {{ group.markers.length }}</span>
         </button>
 
-        <div v-if="open.has(group.name)" class="group-body">
+        <div v-if="isOpen(group.name)" class="group-body">
           <label class="group-option">
             <input
               type="checkbox"

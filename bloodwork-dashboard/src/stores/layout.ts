@@ -25,7 +25,19 @@ export const useLayoutStore = defineStore('layout', () => {
     draft.value.groupInOne = { ...draft.value.groupInOne, [group]: value }
   }
 
+  // Series greyed out by clicking their legend entry. Temporary on purpose: memory
+  // only (a refresh restores them) and cleared by Apply Layout. A marker is in at
+  // most one chart, so a flat list of names is enough.
+  const hidden = ref<string[]>([])
+
+  function toggleHidden(name: string) {
+    hidden.value = hidden.value.includes(name)
+      ? hidden.value.filter((n) => n !== name)
+      : [...hidden.value, name]
+  }
+
   function applyLayout() {
+    hidden.value = []
     applied.value = {
       selected: [...draft.value.selected],
       groupInOne: { ...draft.value.groupInOne },
@@ -62,5 +74,5 @@ export const useLayoutStore = defineStore('layout', () => {
     { immediate: true },
   )
 
-  return { draft, panels, toggleMarker, setGroupInOne, applyLayout }
+  return { draft, hidden, panels, toggleMarker, setGroupInOne, toggleHidden, applyLayout }
 })

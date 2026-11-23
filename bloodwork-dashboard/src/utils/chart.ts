@@ -45,8 +45,12 @@ export function seriesColors(series: Marker[], status: Status): string[] {
   return series.map((_, i) => (highlight ? STATUS_COLOR[status] : PALETTE[i % PALETTE.length]!))
 }
 
-export function buildChartData(series: Marker[], colors: string[]): ChartData<'line'> {
-  const single = series.length === 1
+// `single` styles the line as a lone series (filled area) even if others are hidden.
+export function buildChartData(
+  series: Marker[],
+  colors: string[],
+  single = series.length === 1,
+): ChartData<'line'> {
   const times = [...new Set(series.flatMap((m) => m.data.map((d) => d.time)))].sort()
 
   return {
