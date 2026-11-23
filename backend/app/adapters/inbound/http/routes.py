@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Reques
 from fastapi.concurrency import run_in_threadpool
 
 from ....application.use_cases import GetResults, UploadBloodwork
-from ....core.config import get_settings
+from ....config.settings import get_settings
 from ....domain.errors import FileTooLarge
 from .dependencies import get_results_use_case, get_upload_use_case
 from .schemas import BloodworkMetadata

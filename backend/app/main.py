@@ -8,8 +8,8 @@ from .adapters.inbound.http.errors import register_error_handlers
 from .adapters.inbound.http.routes import router
 from .adapters.outbound.influx_repository import InfluxBloodworkRepository
 from .adapters.outbound.pdf_camelot import CamelotReportExtractor
-from .core.config import get_settings
-from .core.logging import setup_logging
+from .config.logging import setup_logging
+from .config.settings import get_settings
 
 settings = get_settings()
 setup_logging(settings.log_level)

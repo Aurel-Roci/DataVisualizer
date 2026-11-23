@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from influxdb_client_3 import InfluxDBClient3
 
-from ...core.config import get_settings
+from ...config.settings import get_settings
 from ...domain.errors import StorageUnavailable
 from ...domain.models import BloodworkRecord
 
