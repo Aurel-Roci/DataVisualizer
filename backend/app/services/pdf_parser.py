@@ -21,6 +21,12 @@ def get_max_file_size() -> int:
     return int(os.getenv("MAX_FILE_SIZE", "10485760"))
 
 
+def get_allowed_extensions() -> set[str]:
+    """Accepted upload extensions, lowercase without the dot (default: pdf)"""
+    raw = os.getenv("ALLOWED_EXTENSIONS", "pdf")
+    return {ext.strip().lower().lstrip(".") for ext in raw.split(",") if ext.strip()}
+
+
 async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
     """Read an upload in chunks, aborting as soon as it exceeds max_size"""
     chunks = []
@@ -73,6 +79,9 @@ async def extract_pdf_data(file: UploadFile, user_bday: str | None) -> dict:
 
     try:
         file_content = await read_upload_limited(file, get_max_file_size())
+        # Extension and content-type are client-controlled; check the file itself
+        if not file_content.lstrip().startswith(b"%PDF-"):
+            raise HTTPException(status_code=400, detail="File is not a valid PDF")
         logger.info(f"Processing upload, size: {len(file_content)} bytes")
 
         result = await run_in_threadpool(_extract_pdf_sync, file_content, user_bday)

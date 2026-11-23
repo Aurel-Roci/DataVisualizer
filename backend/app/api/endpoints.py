@@ -10,7 +10,7 @@ from ..context_manager import get_db
 from ..models.bloodwork_metadata import BloodworkMetadata
 from ..services.bloodwork import handle_bloodwork
 from ..services.database import InfluxDBService
-from ..services.pdf_parser import get_max_file_size
+from ..services.pdf_parser import get_allowed_extensions, get_max_file_size
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,8 @@ async def upload_bloodwork(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    if not (file.filename or "").lower().endswith(".pdf"):
+    extension = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
+    if extension not in get_allowed_extensions():
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
     return await handle_bloodwork(db, file, metadata)
