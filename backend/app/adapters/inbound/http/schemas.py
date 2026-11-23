@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-DEFAULT_PATIENT_NAME = "unknown"
+from ....config.settings import get_settings
 
 
 class BloodworkMetadata(BaseModel):
-    name: str = DEFAULT_PATIENT_NAME
+    name: str = Field(default="", validate_default=True)
     birthday: str | None = None
 
     @field_validator("name", mode="before")
@@ -14,7 +14,8 @@ class BloodworkMetadata(BaseModel):
     def default_blank_name(cls, v):
         """Influx drops a None tag silently, so always tag records with a patient"""
         if v is None or not str(v).strip():
-            return DEFAULT_PATIENT_NAME
+            # One configurable default, so blank-named uploads (e.g. a backfill) share one series
+            return get_settings().default_patient_name
         return str(v).strip()
 
     @field_validator("birthday")

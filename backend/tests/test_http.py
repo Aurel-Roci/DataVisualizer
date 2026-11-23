@@ -85,3 +85,9 @@ def test_results_storage_failure_is_503(client_app):
     client_app.state.repository = InMemoryRepository(fail=True)
     status, _ = asgi_client.get(client_app, "/results", "start_date=2026-01-01&end_date=2026-01-31")
     assert status == 503
+
+
+def test_upload_default_name_is_configurable(client_app, fresh_settings):
+    fresh_settings.setenv("DEFAULT_PATIENT_NAME", "Ada")
+    _, body = asgi_client.upload(client_app, "r.pdf", PDF, {"name": "  "})
+    assert body["name"] == "Ada"
