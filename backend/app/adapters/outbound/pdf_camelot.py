@@ -1,6 +1,7 @@
 import io
 import logging
 import tempfile
+import threading
 
 import pdfplumber
 
@@ -8,6 +9,9 @@ from ...application.ports import ExtractedReport
 from ...domain.errors import ExtractionFailed, InvalidReport
 
 logger = logging.getLogger(__name__)
+
+# pdfium (used by pdfplumber/camelot) is not thread-safe: concurrent parsing segfaults the process
+_PDF_LOCK = threading.Lock()
 
 
 class CamelotReportExtractor:
@@ -20,7 +24,8 @@ class CamelotReportExtractor:
         logger.info(f"Processing upload, size: {len(content)} bytes")
 
         try:
-            report = self._extract(content)
+            with _PDF_LOCK:
+                report = self._extract(content)
         except Exception as e:
             logger.warning(f"PDF extraction failed: {e}")
             raise ExtractionFailed("Could not extract text from PDF") from e
