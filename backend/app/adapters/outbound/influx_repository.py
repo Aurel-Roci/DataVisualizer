@@ -10,6 +10,16 @@ from ...domain.models import BloodworkRecord
 logger = logging.getLogger(__name__)
 
 
+def _is_schema_conflict(e: Exception) -> bool:
+    text = str(e).lower()
+    return "expected tag" in text or "expected field" in text or "schema" in text or "conflict" in text
+
+
+def _is_table_missing(e: Exception) -> bool:
+    text = str(e).lower()
+    return "not found" in text and "table" in text
+
+
 class InfluxBloodworkRepository:
     """BloodworkRepository port implementation backed by InfluxDB v3"""
 
@@ -68,6 +78,12 @@ class InfluxBloodworkRepository:
 
         except Exception as e:
             logger.exception(f"Error storing bloodwork record: {e}")
+            if _is_schema_conflict(e):
+                raise StorageUnavailable(
+                    "Failed to store results: the existing 'bloodwork' table has a different schema "
+                    "(a column is stored as a tag but written as a field, or vice versa). "
+                    "Recreate the table; see the server log for details"
+                ) from e
             raise StorageUnavailable("Failed to store results in database") from e
 
     def query(self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None) -> list[dict]:
@@ -111,6 +127,10 @@ class InfluxBloodworkRepository:
             return df.astype(object).where(df.notna(), None).to_dict("records")
 
         except Exception as e:
+            if _is_table_missing(e):
+                # Fresh install / dropped table: nothing stored yet, not an error
+                logger.info("No bloodwork table yet, returning no results")
+                return []
             logger.exception(f"Error querying patient tests: {e}")
             raise StorageUnavailable("Failed to fetch results") from e
 
