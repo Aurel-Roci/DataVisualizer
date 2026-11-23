@@ -22,9 +22,14 @@ package = false
 
 [dependency-groups]
 dev = [
+    "pytest>=9.2.0",
     "ruff>=0.17.6",
     "ty>=0.0.108",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 120
@@ -41,7 +46,7 @@ quote-style = "double"
 python-version = "3.13"
 
 [tool.ty.src]
-include = ["app", "scripts"]
+include = ["app", "scripts", "tests"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Query"]
