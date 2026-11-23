@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.endpoints import router
+from .api.errors import register_error_handlers
 from .context_manager import lifespan
 from .core.config import get_settings
 from .core.logging import setup_logging
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+register_error_handlers(app)
 
 
 if __name__ == "__main__":

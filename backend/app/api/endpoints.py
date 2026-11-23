@@ -3,16 +3,37 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
+from ..application.use_cases import UploadBloodwork
 from ..context_manager import get_db
 from ..core.config import get_settings
+from ..domain.errors import FileTooLarge
 from ..models.bloodwork_metadata import BloodworkMetadata
-from ..services.bloodwork import handle_bloodwork
 from ..services.database import InfluxDBService
+from ..services.pdf_parser import CamelotReportExtractor
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+UPLOAD_CHUNK_SIZE = 64 * 1024
+
+
+def get_upload_use_case(db: InfluxDBService = Depends(get_db)) -> UploadBloodwork:
+    return UploadBloodwork(extractor=CamelotReportExtractor(), repository=db)
+
+
+async def read_upload_limited(file: UploadFile, max_size: int) -> bytes:
+    """Read an upload in chunks, aborting as soon as it exceeds max_size"""
+    chunks = []
+    total = 0
+    while chunk := await file.read(UPLOAD_CHUNK_SIZE):
+        total += len(chunk)
+        if total > max_size:
+            raise FileTooLarge(max_size)
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 @router.get("/")
@@ -30,7 +51,7 @@ async def health_check():
 @router.post("/upload-bloodwork")
 async def upload_bloodwork(
     request: Request,
-    db: InfluxDBService = Depends(get_db),
+    use_case: UploadBloodwork = Depends(get_upload_use_case),
     file: UploadFile = File(...),
     birthday: str | None = Form(None),
     name: str | None = Form(None),
@@ -40,7 +61,7 @@ async def upload_bloodwork(
     max_size = settings.max_file_size
     content_length = request.headers.get("content-length")
     if content_length and content_length.isdigit() and int(content_length) > max_size:
-        raise HTTPException(status_code=413, detail=f"File too large. Maximum size: {max_size} bytes")
+        raise FileTooLarge(max_size)
 
     try:
         metadata = BloodworkMetadata(name=name, birthday=birthday)
@@ -51,7 +72,16 @@ async def upload_bloodwork(
     if extension not in settings.allowed_extensions:
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
-    return await handle_bloodwork(db, file, metadata)
+    content = await read_upload_limited(file, max_size)
+    record = await run_in_threadpool(use_case.execute, content, metadata.name, metadata.birthday)
+
+    return {
+        "filename": file.filename,
+        "test_date": record.test_date,
+        "name": metadata.name,
+        "results": record.results,
+        "message": "Blood work parsed successfully",
+    }
 
 
 @router.get("/results")

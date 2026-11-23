@@ -5,6 +5,7 @@ import pandas as pd
 from influxdb_client_3 import InfluxDBClient3
 
 from ..core.config import get_settings
+from ..domain.errors import StorageUnavailable
 from ..domain.models import BloodworkRecord
 
 logger = logging.getLogger(__name__)
@@ -32,15 +33,15 @@ class InfluxDBService:
 
         self.client = InfluxDBClient3(host=self.host, token=self.token, database=self.database)
 
-    def store_bloodwork_record(self, record: BloodworkRecord) -> bool:
+    def store(self, record: BloodworkRecord) -> None:
         """
         Store a complete bloodwork record in InfluxDB
 
         Args:
             record: BloodworkRecord object
 
-        Returns:
-            bool: Success status
+        Raises:
+            StorageUnavailable: if the write fails
         """
         try:
             # Prepare data points for batch write
@@ -65,11 +66,10 @@ class InfluxDBService:
                 points.append(point)
 
             self.client.write(points)
-            return True
 
         except Exception as e:
             logger.exception(f"Error storing bloodwork record: {e}")
-            return False
+            raise StorageUnavailable("Failed to store results in database") from e
 
     def get_patient_tests(
         self, start_date: datetime, end_date: datetime, test_names: list[str] | None = None
